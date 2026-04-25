@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sorting Visualizer — Aayush Solanki</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --yellow:  #F6FFDC;
+    --blue:    #CFECF3;
+    --mint:    #DAF9DE;
+    --pink:    #F9B2D7;
+
+    --bg:      #F6FFDC;
+    --surface: #ffffff;
+    --border:  #d4e8a0;
+
+    --accent:  #4a7c3f;   /* deep green — readable on yellow */
+    --accent2: #c0478a;   /* deep pink */
+    --accent3: #2878a0;   /* deep blue */
+
+    --comparing: #c0478a;  /* pink bar */
+    --swapping:  #2878a0;  /* blue bar */
+    --sorted:    #4a7c3f;  /* green bar */
+    --pivot:     #e07b30;
+    --default:   #b8d4a0;
+
+    --text:  #1a2a1a;
+    --muted: #7a9a7a;
+    --mono:  'Share Tech Mono', monospace;
+    --sans:  'Syne', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  header {
+    padding: 1.2rem 2rem 1rem;
+    border-bottom: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    background: var(--mint);
+  }
+
+  header h1 {
+    font-family: var(--sans);
+    font-weight: 800;
+    font-size: 1.4rem;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+  header h1 span { color: var(--accent); }
+
+  .tag {
+    font-size: 0.65rem;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: var(--yellow);
+  }
+
+  .main {
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+    height: calc(100vh - 68px);
+    padding: 1.2rem 1.5rem;
+    gap: 1rem;
+  }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    align-items: center;
+    background: var(--blue);
+    padding: 0.8rem 1rem;
+    border-radius: 12px;
+    border: 1px solid #aad4e0;
+  }
+
+  .algo-group { display: flex; gap: 4px; }
+
+  .algo-btn {
+    background: var(--surface);
+    border: 1.5px solid #aad4e0;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    padding: 5px 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-radius: 6px;
+    letter-spacing: 0.04em;
+  }
+
+  .algo-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--mint); }
+  .algo-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: bold;
+  }
+
+  .sep { width: 1px; background: #aad4e0; height: 26px; margin: 0 2px; }
+
+  .ctrl-btn {
+    background: var(--surface);
+    border: 1.5px solid #aad4e0;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    padding: 5px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-radius: 6px;
+  }
+
+  .ctrl-btn.primary { border-color: var(--accent); color: var(--accent); background: var(--mint); }
+  .ctrl-btn.primary:hover { background: var(--accent); color: #fff; }
+  .ctrl-btn:hover { border-color: var(--accent3); color: var(--accent3); }
+  .ctrl-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .slider-group {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.68rem;
+    color: var(--muted);
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 75px;
+    height: 3px;
+    background: #aad4e0;
+    outline: none;
+    border-radius: 2px;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 13px; height: 13px;
+    background: var(--accent);
+    cursor: pointer;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  }
+
+  /* Stats */
+  .stats {
+    display: flex;
+    gap: 0;
+    font-size: 0.68rem;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 0.5rem 1.2rem;
+    flex: 1;
+  }
+
+  .stat:nth-child(1) { background: var(--mint); }
+  .stat:nth-child(2) { background: var(--pink); }
+  .stat:nth-child(3) { background: var(--blue); }
+  .stat:nth-child(4) { background: var(--yellow); }
+
+  .stat + .stat { border-left: 1px solid var(--border); }
+
+  .stat-label { color: var(--muted); font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; }
+  .stat-value { font-size: 1rem; font-family: var(--sans); font-weight: 700; color: var(--text); }
+
+  /* Canvas */
+  .viz-container {
+    background: #fff;
+    border: 1.5px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(74,124,63,0.08);
+  }
+
+  #canvas { width: 100%; height: 100%; display: block; }
+
+  /* Bottom bar */
+  .bottom-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .legend {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.63rem;
+    color: var(--muted);
+    align-items: center;
+    flex-wrap: wrap;
+    background: var(--blue);
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid #aad4e0;
+  }
+
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot.default   { background: var(--default); }
+  .dot.comparing { background: var(--comparing); }
+  .dot.swapping  { background: var(--swapping); }
+  .dot.sorted    { background: var(--sorted); }
+
+  .status-line {
+    font-size: 0.65rem;
+    color: var(--muted);
+    background: var(--pink);
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid #e8a0c8;
+  }
+  .status-line span { color: var(--accent2); font-weight: bold; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>SORT<span>.</span>VIZ</h1>
+  <span class="tag">Algorithm Visualizer</span>
+  <span class="tag">v1.0</span>
+</header>
+
+<div class="main">
+
+  <div class="controls">
+    <div class="algo-group">
+      <button class="algo-btn active" data-algo="bubble">Bubble</button>
+      <button class="algo-btn" data-algo="insertion">Insertion</button>
+      <button class="algo-btn" data-algo="selection">Selection</button>
+      <button class="algo-btn" data-algo="merge">Merge</button>
+      <button class="algo-btn" data-algo="quick">Quick</button>
+    </div>
+    <div class="sep"></div>
+    <button class="ctrl-btn primary" id="startBtn">▶ Run</button>
+    <button class="ctrl-btn" id="resetBtn">↺ Reset</button>
+    <div class="sep"></div>
+    <div class="slider-group">
+      <span>SIZE</span>
+      <input type="range" id="sizeSlider" min="10" max="120" value="50">
+      <span id="sizeVal">50</span>
+    </div>
+    <div class="slider-group">
+      <span>SPEED</span>
+      <input type="range" id="speedSlider" min="1" max="10" value="5">
+      <span id="speedVal">5</span>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <span class="stat-label">Comparisons</span>
+      <span class="stat-value" id="comparisons">0</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Swaps</span>
+      <span class="stat-value" id="swaps">0</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Time</span>
+      <span class="stat-value" id="elapsed">0ms</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Status</span>
+      <span class="stat-value" id="statusText">Ready</span>
+    </div>
+  </div>
+
+  <div class="viz-container">
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <div class="bottom-bar">
+    <div class="legend">
+      <div class="legend-item"><div class="dot default"></div><span>unsorted</span></div>
+      <div class="legend-item"><div class="dot comparing"></div><span>comparing</span></div>
+      <div class="legend-item"><div class="dot swapping"></div><span>swapping</span></div>
+      <div class="legend-item"><div class="dot sorted"></div><span>sorted</span></div>
+    </div>
+    <div class="status-line">github.com/<span>aayushsolanki-1</span></div>
+  </div>
+
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+const COLORS = {
+  default:   '#b8d4a0',
+  comparing: '#c0478a',
+  swapping:  '#2878a0',
+  sorted:    '#4a7c3f',
+  pivot:     '#e07b30',
+};
+
+let array = [], isRunning = false, animTimer = null;
+let comparisons = 0, swaps = 0, currentAlgo = 'bubble', N = 50;
+
+function resizeCanvas() {
+  const c = canvas.parentElement;
+  canvas.width = c.clientWidth;
+  canvas.height = c.clientHeight;
+  draw(array, {});
+}
+window.addEventListener('resize', resizeCanvas);
+
+function generateArray(n) {
+  array = [];
+  for (let i = 0; i < n; i++)
+    array.push(Math.floor(Math.random() * (canvas.height * 0.82 - 10)) + 10);
+}
+
+function draw(arr, states) {
+  if (!canvas.width) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const w = canvas.width, h = canvas.height, n = arr.length;
+  const barW = Math.max(1, (w - n * 2) / n);
+  const gap = (w - barW * n) / n;
+  for (let i = 0; i < n; i++) {
+    const x = i * (barW + gap) + gap / 2;
+    const barH = arr[i];
+    let color = COLORS.default;
+    if (states) {
+      if (states.sorted    && states.sorted.includes(i))    color = COLORS.sorted;
+      if (states.comparing && states.comparing.includes(i)) color = COLORS.comparing;
+      if (states.swapping  && states.swapping.includes(i))  color = COLORS.swapping;
+      if (states.pivot === i) color = COLORS.pivot;
+    }
+    ctx.fillStyle = color;
+    // Rounded top
+    const bx = Math.floor(x), by = h - barH - 4, bw = Math.ceil(barW), bh = barH;
+    const r = Math.min(3, bw / 2);
+    ctx.beginPath();
+    ctx.moveTo(bx + r, by);
+    ctx.lineTo(bx + bw - r, by);
+    ctx.quadraticCurveTo(bx + bw, by, bx + bw, by + r);
+    ctx.lineTo(bx + bw, by + bh);
+    ctx.lineTo(bx, by + bh);
+    ctx.lineTo(bx, by + r);
+    ctx.quadraticCurveTo(bx, by, bx + r, by);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+function bubbleSort(arr) {
+  const frames = [], a = [...arr], n = a.length, sorted = [];
+  for (let i = 0; i < n - 1; i++) {
+    for (let j = 0; j < n - i - 1; j++) {
+      frames.push({ arr: [...a], state: { comparing: [j, j+1], sorted: [...sorted] } });
+      if (a[j] > a[j+1]) { [a[j], a[j+1]] = [a[j+1], a[j]]; frames.push({ arr: [...a], state: { swapping: [j, j+1], sorted: [...sorted] }, swap: true }); }
+    }
+    sorted.push(n - 1 - i);
+  }
+  sorted.push(0);
+  frames.push({ arr: [...a], state: { sorted: a.map((_, i) => i) } });
+  return frames;
+}
+
+function insertionSort(arr) {
+  const frames = [], a = [...arr], n = a.length;
+  for (let i = 1; i < n; i++) {
+    let j = i;
+    while (j > 0) {
+      frames.push({ arr: [...a], state: { comparing: [j-1, j] } });
+      if (a[j] < a[j-1]) { [a[j], a[j-1]] = [a[j-1], a[j]]; frames.push({ arr: [...a], state: { swapping: [j-1, j] }, swap: true }); j--; }
+      else break;
+    }
+  }
+  frames.push({ arr: [...a], state: { sorted: a.map((_, i) => i) } });
+  return frames;
+}
+
+function selectionSort(arr) {
+  const frames = [], a = [...arr], n = a.length, sorted = [];
+  for (let i = 0; i < n - 1; i++) {
+    let minIdx = i;
+    for (let j = i + 1; j < n; j++) {
+      frames.push({ arr: [...a], state: { comparing: [minIdx, j], sorted: [...sorted] } });
+      if (a[j] < a[minIdx]) minIdx = j;
+    }
+    if (minIdx !== i) { [a[i], a[minIdx]] = [a[minIdx], a[i]]; frames.push({ arr: [...a], state: { swapping: [i, minIdx], sorted: [...sorted] }, swap: true }); }
+    sorted.push(i);
+  }
+  sorted.push(n - 1);
+  frames.push({ arr: [...a], state: { sorted: a.map((_, i) => i) } });
+  return frames;
+}
+
+function mergeSort(arr) {
+  const frames = [], a = [...arr];
+  function merge(a, l, m, r) {
+    const left = a.slice(l, m+1), right = a.slice(m+1, r+1);
+    let i = 0, j = 0, k = l;
+    while (i < left.length && j < right.length) {
+      frames.push({ arr: [...a], state: { comparing: [l+i, m+1+j] } });
+      a[k++] = left[i] <= right[j] ? left[i++] : right[j++];
+      frames.push({ arr: [...a], state: { swapping: [k-1] }, swap: true });
+    }
+    while (i < left.length) { a[k++] = left[i++]; frames.push({ arr: [...a], state: { swapping: [k-1] }, swap: true }); }
+    while (j < right.length) { a[k++] = right[j++]; frames.push({ arr: [...a], state: { swapping: [k-1] }, swap: true }); }
+  }
+  function sort(a, l, r) { if (l >= r) return; const m = Math.floor((l+r)/2); sort(a,l,m); sort(a,m+1,r); merge(a,l,m,r); }
+  sort(a, 0, a.length - 1);
+  frames.push({ arr: [...a], state: { sorted: a.map((_, i) => i) } });
+  return frames;
+}
+
+function quickSort(arr) {
+  const frames = [], a = [...arr];
+  function partition(a, l, r) {
+    let i = l - 1;
+    for (let j = l; j < r; j++) {
+      frames.push({ arr: [...a], state: { comparing: [j, r], pivot: r } });
+      if (a[j] <= a[r]) { i++; [a[i], a[j]] = [a[j], a[i]]; frames.push({ arr: [...a], state: { swapping: [i, j], pivot: r }, swap: true }); }
+    }
+    [a[i+1], a[r]] = [a[r], a[i+1]];
+    frames.push({ arr: [...a], state: { swapping: [i+1, r] }, swap: true });
+    return i + 1;
+  }
+  function sort(a, l, r) { if (l >= r) return; const p = partition(a,l,r); sort(a,l,p-1); sort(a,p+1,r); }
+  sort(a, 0, a.length - 1);
+  frames.push({ arr: [...a], state: { sorted: a.map((_, i) => i) } });
+  return frames;
+}
+
+function getFrames(algo, arr) {
+  return { bubble: bubbleSort, insertion: insertionSort, selection: selectionSort, merge: mergeSort, quick: quickSort }[algo](arr);
+}
+
+function getDelay() {
+  return Math.max(1, 200 - (parseInt(document.getElementById('speedSlider').value) - 1) * 22);
+}
+
+function runAnimation(frames) {
+  let i = 0; isRunning = true; setRunning(true);
+  const t0 = Date.now();
+  function step() {
+    if (i >= frames.length) {
+      isRunning = false; setRunning(false);
+      document.getElementById('statusText').textContent = 'Done ✓';
+      document.getElementById('elapsed').textContent = (Date.now()-t0)+'ms';
+      return;
+    }
+    const f = frames[i];
+    draw(f.arr, f.state);
+    if (f.state.comparing) comparisons++;
+    if (f.swap) swaps++;
+    document.getElementById('comparisons').textContent = comparisons;
+    document.getElementById('swaps').textContent = swaps;
+    document.getElementById('elapsed').textContent = (Date.now()-t0)+'ms';
+    i++;
+    animTimer = setTimeout(step, getDelay());
+  }
+  step();
+}
+
+function setRunning(r) {
+  document.getElementById('startBtn').disabled = r;
+  document.getElementById('resetBtn').disabled = r;
+  document.getElementById('sizeSlider').disabled = r;
+  document.querySelectorAll('.algo-btn').forEach(b => b.disabled = r);
+  document.getElementById('statusText').textContent = r ? 'Sorting...' : 'Ready';
+}
+
+document.querySelectorAll('.algo-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.algo-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentAlgo = btn.dataset.algo;
+  });
+});
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  if (isRunning) return;
+  comparisons = 0; swaps = 0;
+  document.getElementById('comparisons').textContent = '0';
+  document.getElementById('swaps').textContent = '0';
+  document.getElementById('elapsed').textContent = '0ms';
+  runAnimation(getFrames(currentAlgo, array));
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if (isRunning) return;
+  comparisons = 0; swaps = 0;
+  document.getElementById('comparisons').textContent = '0';
+  document.getElementById('swaps').textContent = '0';
+  document.getElementById('elapsed').textContent = '0ms';
+  document.getElementById('statusText').textContent = 'Ready';
+  N = parseInt(document.getElementById('sizeSlider').value);
+  generateArray(N); draw(array, {});
+});
+
+document.getElementById('sizeSlider').addEventListener('input', function() {
+  N = parseInt(this.value); document.getElementById('sizeVal').textContent = N;
+  generateArray(N); draw(array, {});
+});
+
+document.getElementById('speedSlider').addEventListener('input', function() {
+  document.getElementById('speedVal').textContent = this.value;
+});
+
+window.addEventListener('load', () => { resizeCanvas(); generateArray(N); draw(array, {}); });
+</script>
+</body>
+</html>
